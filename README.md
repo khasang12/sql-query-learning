@@ -89,6 +89,52 @@ npm start
 npx tsc --noEmit
 ```
 
+### 🚀 Deployment to GitHub Pages
+
+This project is configured for static export and deployment to GitHub Pages.
+
+#### Prerequisites
+1. Repository name must match the `basePath` in `next.config.ts` (currently `/sql-query-learning`)
+2. GitHub Pages must be enabled in repository settings (Settings → Pages → Source: GitHub Actions)
+
+#### Deployment Steps
+
+1. **Configure basePath** (optional):
+   - If deploying to user/organization site (`https://username.github.io`), set `basePath: ''` in `next.config.ts`
+   - If deploying to project site (`https://username.github.io/repo-name`), set `basePath: '/repo-name'`
+
+2. **Build and deploy**:
+   ```bash
+   # One-time setup: install dependencies
+   npm install
+
+   # Build static site and deploy to GitHub Pages
+   npm run deploy
+   ```
+
+   This will:
+   - Build the static export (`next build`)
+   - Create `.nojekyll` file to disable Jekyll processing
+   - Deploy the `out` directory to the `gh-pages` branch
+
+3. **Verify deployment**:
+   - Visit `https://username.github.io/repo-name`
+   - Check browser console for any loading errors
+
+#### Manual Deployment
+```bash
+# Build static site
+npm run export
+
+# Deploy using gh-pages
+npx gh-pages -d out
+```
+
+#### Notes
+- WebAssembly files are included in the static build for PGlite PostgreSQL
+- The database persists in browser storage (IndexedDB) per user session
+- Some PostgreSQL configurations are restricted in WASM environment (noted in UI)
+
 ## 🏗️ Project Architecture
 
 ### Core Components

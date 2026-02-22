@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  webpack: (config, { isServer }) => {
+  // Static export for GitHub Pages
+  output: 'export',
+  // Base path for GitHub Pages project site
+  basePath: '/sql-query-learning',
+
+  webpack: (config) => {
     // WASM support for PGlite
     config.experiments = {
       asyncWebAssembly: true,

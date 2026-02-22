@@ -19,17 +19,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Development server (uses webpack for WASM support)
 npm run dev
 
-# Production build
+# Production build (static export for GitHub Pages)
 npm run build
 
 # Start production server
 npm start
+
+# Static export for GitHub Pages
+npm run export
+
+# Deploy to GitHub Pages (builds and deploys)
+npm run deploy
 
 # TypeScript type checking
 npx tsc --noEmit
 ```
 
 **Note**: The development server logs to `/tmp/dev.log`. Check this file for initialization logs, query execution details, and any WASM-related errors.
+
+**Static Export Configuration**: The app is configured for static export (`output: 'export'`) with basePath `/sql-query-learning` for GitHub Pages project site. Update `basePath` in `next.config.ts` for different deployment targets.
 
 ## Architecture
 
@@ -89,6 +97,13 @@ npx tsc --noEmit
 ### Browser Compatibility
 - Requires WebAssembly support (all modern browsers).
 - Database persists in browser storage (IndexedDB). Clear browser data to reset.
+
+### GitHub Pages Deployment
+- Configured for static export with `output: 'export'` and `basePath: '/sql-query-learning'`
+- Deployment scripts: `npm run export`, `npm run deploy` (builds and deploys to `gh-pages` branch)
+- Includes `.nojekyll` file to disable Jekyll processing
+- WebAssembly files are served with correct MIME types for PGlite
+- Update `basePath` in `next.config.ts` for different deployment targets (empty for user/organization site)
 
 ## Troubleshooting
 

@@ -30,14 +30,14 @@ export default function Home() {
                 Index Comparison
               </a>
             </li>
-            <li>
+            {/* <li>
               <a
                 href="#locking-simulator"
                 className="text-foreground-secondary hover:text-accent-cyan transition-colors"
               >
                 Locking Simulator
               </a>
-            </li>
+            </li> */}
           </ul>
         </nav>
       </header>
@@ -55,11 +55,11 @@ export default function Home() {
         </section>
 
         {/* Module Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {[
             { title: 'Query Detective', desc: 'Interactive SQL query editor with EXPLAIN ANALYZE', color: 'cyan', href: '#query-detective', icon: 'query' },
             { title: 'Index Comparison', desc: 'Compare B-tree vs GIN indexes and execution plans', color: 'purple', href: '#index-comparison', icon: 'index' },
-            { title: 'Locking Simulator', desc: 'Explore transaction isolation levels and locking behavior', color: 'green', href: '#locking-simulator', icon: 'lock' },
+            // { title: 'Locking Simulator', desc: 'Explore transaction isolation levels and locking behavior', color: 'green', href: '#locking-simulator', icon: 'lock' },
           ].map((module) => (
             <a
               key={module.title}
@@ -109,7 +109,7 @@ export default function Home() {
         </section>
 
         {/* Locking Simulator */}
-        <section id="locking-simulator" className="glass-panel p-8 mt-12">
+        {/* <section id="locking-simulator" className="glass-panel p-8 mt-12">
           <h3 className="text-3xl font-bold mb-6 flex items-center gap-3">
             <span className="glow-green">Locking Simulator</span>
             <span className="text-sm font-normal px-3 py-1 rounded-full bg-glass-background">
@@ -121,7 +121,7 @@ export default function Home() {
             Simulate deadlocks, row-level locking, and table locks with real PostgreSQL transactions.
           </p>
           <DatabaseLockingSimulator />
-        </section>
+        </section> */}
       </main>
 
       <footer className="mt-16 text-center text-foreground-tertiary text-sm">

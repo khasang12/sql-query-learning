@@ -209,10 +209,10 @@ export function QueryDetective() {
 
   // Run initial query on mount
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !error) {
       runQuery(SAMPLE_QUERIES[0].sql);
     }
-  }, [isLoading]);
+  }, [isLoading, error]);
 
   if (isLoading) {
     return (

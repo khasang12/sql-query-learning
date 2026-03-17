@@ -44,8 +44,7 @@ COMMIT;`,
     description: 'One transaction updates a row, another tries to read it',
     leftTransaction: `BEGIN;
 UPDATE users SET email = 'locked@example.com' WHERE id = 1;
--- Hold lock for 5 seconds
-SELECT pg_sleep(5);
+-- Holding lock (no pg_sleep in PGlite)
 COMMIT;`,
     rightTransaction: `BEGIN;
 -- Try to read locked row (will wait in READ COMMITTED)
@@ -59,8 +58,7 @@ COMMIT;`,
     description: 'Exclusive lock on table blocks other transactions',
     leftTransaction: `BEGIN;
 LOCK TABLE users IN EXCLUSIVE MODE;
--- Hold lock
-SELECT pg_sleep(5);
+-- Holding exclusive lock
 COMMIT;`,
     rightTransaction: `BEGIN;
 -- Try to query locked table
@@ -118,6 +116,7 @@ export function DatabaseLockingSimulator() {
   // Initialize databases
   useEffect(() => {
     let mounted = true
+    let initializationTimeout: NodeJS.Timeout
 
     async function initializeDatabases() {
       try {
@@ -127,11 +126,23 @@ export function DatabaseLockingSimulator() {
         const left = new PGlite()
         const right = new PGlite()
 
-        await Promise.all([left.waitReady, right.waitReady])
-        console.log('DatabaseLockingSimulator: Databases ready')
+        // Wait for databases to be ready with timeout
+        console.log('DatabaseLockingSimulator: Waiting for databases to be ready (up to 30s)...')
+        await Promise.race([
+          Promise.all([left.waitReady, right.waitReady]),
+          new Promise((_, reject) => {
+            initializationTimeout = setTimeout(() => {
+              reject(new Error('Database initialization timeout after 30 seconds. This can happen on slower devices or initial WASM loading.'))
+            }, 30000)
+          })
+        ])
+        clearTimeout(initializationTimeout)
+        console.log('DatabaseLockingSimulator: Databases are ready')
 
         // Seed both databases with sample data
+        console.log('DatabaseLockingSimulator: Seeding left database...')
         await seedDatabase(left)
+        console.log('DatabaseLockingSimulator: Seeding right database...')
         await seedDatabase(right)
         console.log('DatabaseLockingSimulator: Databases seeded')
 
@@ -139,6 +150,7 @@ export function DatabaseLockingSimulator() {
           setLeftDb(left)
           setRightDb(right)
           setIsLoading(false)
+          console.log('DatabaseLockingSimulator: All databases initialized and seeded successfully')
         }
       } catch (err) {
         console.error('DatabaseLockingSimulator: Failed to initialize:', err)
@@ -153,53 +165,75 @@ export function DatabaseLockingSimulator() {
 
     return () => {
       mounted = false
+      if (initializationTimeout) clearTimeout(initializationTimeout)
     }
   }, [])
 
   async function seedDatabase(db: PGlite) {
-    // Create tables if they don't exist (simplified version)
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100),
-        email VARCHAR(100) UNIQUE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
+    console.log('DatabaseLockingSimulator: Starting database seeding...')
 
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS orders (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER,
-        amount DECIMAL(10, 2),
-        status VARCHAR(50),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
+    // Create tables if they don't exist (simplified version matching PGliteProvider)
+    try {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100),
+          email VARCHAR(100) UNIQUE,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      console.log('DatabaseLockingSimulator: Created users table')
 
-    // Insert sample data if empty
-    const userCount = await db.query('SELECT COUNT(*) as count FROM users') as { rows: { count: string }[] }
-    if (userCount.rows[0]?.count === '0') {
-      // Insert 10 sample users
-      const userValues = []
-      for (let i = 1; i <= 10; i++) {
-        userValues.push(`('User ${i}', 'user${i}@example.com')`)
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS orders (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER,
+          amount DECIMAL(10, 2),
+          status VARCHAR(50),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `)
+      console.log('DatabaseLockingSimulator: Created orders table')
+
+      // Insert sample data if empty
+      const userCount = await db.query('SELECT COUNT(*) as count FROM users') as { rows: { count: string }[] }
+      console.log('DatabaseLockingSimulator: User count:', userCount.rows[0]?.count)
+
+      if (userCount.rows[0]?.count === '0' || userCount.rows[0]?.count.toString() === '0') {
+        // Insert 20 sample users (enough for locking scenarios)
+        const userValues = []
+        for (let i = 1; i <= 20; i++) {
+          userValues.push(`('User ${i}', 'user${i}@example.com')`)
+        }
+        console.log('DatabaseLockingSimulator: Inserting users...')
+        await db.query(`INSERT INTO users (name, email) VALUES ${userValues.join(',')}`)
+        console.log('DatabaseLockingSimulator: Users inserted')
+
+        // Insert 50 sample orders with random user associations
+        console.log('DatabaseLockingSimulator: Generating orders...')
+        const orderValues = []
+        const statuses = ['completed', 'pending', 'cancelled']
+        for (let i = 1; i <= 50; i++) {
+          const userId = Math.floor(Math.random() * 20) + 1
+          const amount = (Math.random() * 1000).toFixed(2)
+          const status = statuses[Math.floor(Math.random() * statuses.length)]
+          orderValues.push(`(${userId}, ${amount}, '${status}')`)
+        }
+        await db.query(`INSERT INTO orders (user_id, amount, status) VALUES ${orderValues.join(',')}`)
+        console.log('DatabaseLockingSimulator: Orders inserted')
       }
-      await db.query(`INSERT INTO users (name, email) VALUES ${userValues.join(',')}`)
 
-      // Insert 20 sample orders
-      const orderValues = []
-      for (let i = 1; i <= 20; i++) {
-        const userId = Math.floor(Math.random() * 10) + 1
-        const amount = (Math.random() * 1000).toFixed(2)
-        orderValues.push(`(${userId}, ${amount}, 'pending')`)
-      }
-      await db.query(`INSERT INTO orders (user_id, amount, status) VALUES ${orderValues.join(',')}`)
+      // Create indexes
+      console.log('DatabaseLockingSimulator: Creating indexes...')
+      await db.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
+      await db.query('CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)')
+      console.log('DatabaseLockingSimulator: Indexes created')
+    } catch (err) {
+      console.error('DatabaseLockingSimulator: Seeding error:', err)
+      throw err
     }
 
-    // Create indexes
-    await db.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
-    await db.query('CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id)')
+    console.log('DatabaseLockingSimulator: Database seeding complete')
   }
 
   async function executeTransaction(db: PGlite, transaction: TransactionState): Promise<{ results: any[], error: string | null, locks: any[] }> {
@@ -305,7 +339,16 @@ export function DatabaseLockingSimulator() {
   if (isLoading) {
     return (
       <div className="glass-panel p-8 text-center">
-        <div className="animate-pulse">Initializing locking simulator databases...</div>
+        <div className="animate-pulse mb-4">Initializing locking simulator databases...</div>
+        <div className="text-sm text-foreground-secondary">
+          This may take a few seconds. Creating two separate PostgreSQL instances in your browser.
+        </div>
+        {error && (
+          <div className="mt-4 p-4 bg-red-900/20 border border-red-700/50 rounded-lg">
+            <div className="text-accent-pink font-bold mb-1">Initialization Error</div>
+            <div className="font-mono text-sm text-foreground-secondary">{error}</div>
+          </div>
+        )}
       </div>
     )
   }
@@ -670,6 +713,14 @@ export function DatabaseLockingSimulator() {
               <li>• <strong>Lock escalation</strong>: Row to table locks</li>
             </ul>
           </div>
+        </div>
+        <div className="mt-6 p-4 bg-glass-background rounded-lg border border-glass-border">
+          <h5 className="font-bold text-foreground-primary mb-2">Note on Simulation</h5>
+          <p className="text-sm text-foreground-secondary">
+            This simulator uses separate PostgreSQL instances for each transaction to demonstrate locking concepts.
+            In a real database, transactions would share the same database instance and locks would actually block concurrent access.
+            The SQL shown is educational - run transactions sequentially to see expected behavior.
+          </p>
         </div>
       </div>
     </div>

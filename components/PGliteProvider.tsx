@@ -31,13 +31,25 @@ export function PGliteProvider({ children }: PGliteProviderProps) {
 
   useEffect(() => {
     let mounted = true
+    let initializationTimeout: NodeJS.Timeout | undefined = undefined
 
     async function initDatabase() {
       try {
         console.log('PGliteProvider: Initializing database...')
         // Initialize PGlite
         const database = new PGlite()
-        await database.waitReady
+
+        // Wait for database to be ready with timeout
+        console.log('PGliteProvider: Waiting for database to be ready (up to 30s)...')
+        await Promise.race([
+          database.waitReady,
+          new Promise((_, reject) => {
+            initializationTimeout = setTimeout(() => {
+              reject(new Error('Database initialization timeout after 30 seconds. This can happen on slower devices or initial WASM loading.'))
+            }, 30000)
+          })
+        ])
+        clearTimeout(initializationTimeout)
         console.log('PGliteProvider: Database ready')
 
         // Seed with sample data
@@ -69,6 +81,8 @@ export function PGliteProvider({ children }: PGliteProviderProps) {
           setError(errorMessage)
           setIsLoading(false)
         }
+      } finally {
+        if (initializationTimeout) clearTimeout(initializationTimeout)
       }
     }
 
@@ -76,12 +90,16 @@ export function PGliteProvider({ children }: PGliteProviderProps) {
 
     return () => {
       mounted = false
+      if (initializationTimeout) clearTimeout(initializationTimeout)
     }
   }, [])
 
   async function executeQuery(sql: string): Promise<any[]> {
     if (!db) {
-      throw new Error('Database not initialized')
+      if (error) {
+        throw new Error(`Cannot execute query: Database failed to initialize - ${error}`)
+      }
+      throw new Error('Database not initialized yet. Please wait for the initialization to complete.')
     }
 
     try {

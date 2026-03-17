@@ -80,12 +80,12 @@ export function IndexComparison() {
   const [isRightExecuting, setIsRightExecuting] = useState(false)
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !error) {
       // Run initial queries
       runLeftQuery(COMPARISON_SCENARIOS[0].leftQuery)
       runRightQuery(COMPARISON_SCENARIOS[0].rightQuery)
     }
-  }, [isLoading])
+  }, [isLoading, error])
 
   async function runQuery(sql: string): Promise<QueryResult> {
     try {

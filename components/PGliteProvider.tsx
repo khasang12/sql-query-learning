@@ -51,7 +51,8 @@ export function PGliteProvider({ children }: PGliteProviderProps) {
           const testUsers = await database.query('SELECT COUNT(*) as count FROM users') as { rows: { count: string }[] }
           const testOrders = await database.query('SELECT COUNT(*) as count FROM orders') as { rows: { count: string }[] }
           const testProducts = await database.query('SELECT COUNT(*) as count FROM products') as { rows: { count: string }[] }
-          console.log('PGliteProvider: Test results - Users:', testUsers.rows[0]?.count, 'Orders:', testOrders.rows[0]?.count, 'Products:', testProducts.rows[0]?.count)
+          const testDocuments = await database.query('SELECT COUNT(*) as count FROM documents') as { rows: { count: string }[] }
+          console.log('PGliteProvider: Test results - Users:', testUsers.rows[0]?.count, 'Orders:', testOrders.rows[0]?.count, 'Products:', testProducts.rows[0]?.count, 'Documents:', testDocuments.rows[0]?.count)
         } catch (testErr) {
           console.error('PGliteProvider: Test query failed:', testErr)
         }
@@ -179,6 +180,18 @@ async function seedDatabase(db: PGlite) {
   `)
   console.log('seedDatabase: Created products table')
 
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS documents (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(200),
+      content TEXT,
+      tags TEXT[],
+      metadata JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+  console.log('seedDatabase: Created documents table')
+
   // Insert sample data if tables are empty
   const userCount = await db.query('SELECT COUNT(*) as count FROM users') as { rows: { count: string }[] }
   console.log('seedDatabase: User count query result:', userCount)
@@ -221,6 +234,50 @@ async function seedDatabase(db: PGlite) {
       }
       await db.query(`INSERT INTO products (name, price, category, in_stock) VALUES ${productValues.join(',')}`)
       console.log('seedDatabase: Products inserted')
+
+      // Generate 50 documents with text content, tags, and JSON metadata
+      console.log('seedDatabase: Generating documents...')
+      const documentValues = []
+      const sampleTags = ['database', 'postgresql', 'indexing', 'performance', 'full-text', 'json', 'array', 'gin', 'b-tree']
+      const sampleTitles = [
+        'Understanding PostgreSQL Indexes',
+        'Full Text Search with GIN',
+        'JSONB Data Modeling',
+        'Array Operations in PostgreSQL',
+        'Database Performance Tuning',
+        'Index Types Comparison',
+        'GIN Index for Full Text',
+        'B-tree vs GIN Index',
+        'PostgreSQL Query Optimization',
+        'Advanced Indexing Strategies'
+      ]
+      const sampleContent = [
+        'PostgreSQL provides several index types including B-tree, Hash, GiST, SP-GiST, GIN, and BRIN. Each index type uses a different algorithm that is best suited to different types of queries.',
+        'GIN indexes are inverted indexes that are suitable for data values that contain multiple component values, such as arrays or full-text search documents.',
+        'JSONB is a binary representation of JSON that supports indexing. You can create GIN indexes on JSONB columns to speed up queries that search within JSON documents.',
+        'PostgreSQL arrays are powerful but require careful indexing. GIN indexes can be used to index array columns for efficient membership tests.',
+        'Database performance depends on many factors including query design, indexing strategy, configuration tuning, and hardware resources.',
+        'B-tree indexes are the default and work well for equality and range queries. GIN indexes are better for full-text search, array operations, and JSONB queries.',
+        'Full-text search in PostgreSQL uses tsvector and tsquery types. GIN indexes on tsvector columns dramatically improve search performance.',
+        'Choosing between B-tree and GIN depends on your data and query patterns. B-tree is for ordered data, GIN is for multi-value data.',
+        'Query optimization involves analyzing execution plans, understanding indexes, and rewriting queries for better performance.',
+        'Advanced indexing strategies include partial indexes, expression indexes, covering indexes, and multi-column indexes.'
+      ]
+      for (let i = 1; i <= 50; i++) {
+        const title = sampleTitles[Math.floor(Math.random() * sampleTitles.length)]
+        const content = sampleContent[Math.floor(Math.random() * sampleContent.length)]
+        // Random tags (2-4 tags)
+        const tagCount = Math.floor(Math.random() * 3) + 2
+        const selectedTags = []
+        for (let j = 0; j < tagCount; j++) {
+          selectedTags.push(sampleTags[Math.floor(Math.random() * sampleTags.length)])
+        }
+        const tags = `'{${selectedTags.join(',')}}'`
+        const metadata = `'{"views": ${Math.floor(Math.random() * 1000)}, "category": "${sampleTags[Math.floor(Math.random() * sampleTags.length)]}", "published": ${Math.random() > 0.5}}'`
+        documentValues.push(`('${title}', '${content.replace(/'/g, "''")}', ${tags}, ${metadata})`)
+      }
+      await db.query(`INSERT INTO documents (title, content, tags, metadata) VALUES ${documentValues.join(',')}`)
+      console.log('seedDatabase: Documents inserted')
     } catch (insertErr) {
       console.error('seedDatabase: Failed to insert sample data:', insertErr)
       throw insertErr // Re-throw to be caught by initDatabase
@@ -235,6 +292,10 @@ async function seedDatabase(db: PGlite) {
   await db.query('CREATE INDEX IF NOT EXISTS idx_orders_amount ON orders(amount)')
   await db.query('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)')
   await db.query('CREATE INDEX IF NOT EXISTS idx_users_name_email ON users(name, email)')
+  // GIN indexes for documents table
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_documents_content_gin ON documents USING GIN (to_tsvector('english', content))`)
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_documents_tags_gin ON documents USING GIN (tags)`)
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_documents_metadata_gin ON documents USING GIN (metadata)`)
   console.log('seedDatabase: Indexes created')
   console.log('seedDatabase: Database seeding complete')
 }

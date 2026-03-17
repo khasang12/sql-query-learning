@@ -3,31 +3,31 @@
 @tailwind utilities;
 
 :root {
-  /* Deep dark background palette */
-  --background-primary: #0a0a0a;
-  --background-secondary: #111111;
-  --background-tertiary: #1a1a1a;
+  /* Pastel background palette */
+  --background-primary: #faf6f0; /* Soft cream */
+  --background-secondary: #f0ebe5; /* Light beige */
+  --background-tertiary: #e8e4dd; /* Warm pastel gray */
 
   /* Foreground palette */
-  --foreground-primary: #ededed;
-  --foreground-secondary: #b0b0b0;
-  --foreground-tertiary: #707070;
+  --foreground-primary: #5a5a5a; /* Soft dark gray */
+  --foreground-secondary: #8a8a8a; /* Medium gray */
+  --foreground-tertiary: #b0b0b0; /* Light gray */
 
-  /* Glowing accent colors */
-  --accent-cyan: #00f3ff;
-  --accent-purple: #9d4edd;
-  --accent-pink: #ff2e6f;
-  --accent-green: #00ff9d;
+  /* Pastel accent colors */
+  --accent-cyan: #7bd3ea; /* Pastel cyan */
+  --accent-purple: #b5b9ff; /* Pastel purple */
+  --accent-pink: #ffb6c1; /* Pastel pink */
+  --accent-green: #a8e6cf; /* Pastel green */
 
-  /* Glass effect variables */
-  --glass-background: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.05);
+  /* Glass effect variables - softer pastel glass */
+  --glass-background: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(200, 200, 200, 0.3);
+  --glass-highlight: rgba(255, 255, 255, 0.8);
 
-  /* Shadows */
-  --shadow-glow-cyan: 0 0 20px rgba(0, 243, 255, 0.3);
-  --shadow-glow-purple: 0 0 20px rgba(157, 78, 221, 0.3);
-  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* Shadows - softer pastel shadows */
+  --shadow-glow-cyan: 0 0 15px rgba(123, 211, 234, 0.4);
+  --shadow-glow-purple: 0 0 15px rgba(181, 185, 255, 0.4);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.08);
 
   /* Typography - fluid scale */
   --font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
@@ -111,14 +111,14 @@ a {
 
 a:hover {
   color: var(--accent-purple);
-  text-shadow: 0 0 8px rgba(157, 78, 221, 0.5);
+  text-shadow: 0 0 8px rgba(181, 185, 255, 0.5);
 }
 
 /* Glass effect utilities */
 .glass-panel {
   background: var(--glass-background);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-elevated);
@@ -126,25 +126,25 @@ a:hover {
 }
 
 .glass-panel:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--accent-cyan);
   box-shadow: var(--shadow-elevated), var(--shadow-glow-cyan);
 }
 
 .glow-cyan {
-  text-shadow: 0 0 10px rgba(0, 243, 255, 0.7);
+  text-shadow: 0 0 8px rgba(123, 211, 234, 0.5);
 }
 
 .glow-purple {
-  text-shadow: 0 0 10px rgba(157, 78, 221, 0.7);
+  text-shadow: 0 0 8px rgba(181, 185, 255, 0.5);
 }
 
 .glow-pink {
-  text-shadow: 0 0 10px rgba(255, 46, 111, 0.7);
+  text-shadow: 0 0 8px rgba(255, 182, 193, 0.5);
 }
 
 .glow-green {
-  text-shadow: 0 0 10px rgba(0, 255, 157, 0.7);
+  text-shadow: 0 0 8px rgba(168, 230, 207, 0.5);
 }
 
 /* Button styles */
@@ -166,7 +166,7 @@ a:hover {
 
 .button-primary {
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-  color: var(--background-primary);
+  color: var(--foreground-primary);
 }
 
 .button-primary:hover {
@@ -181,7 +181,7 @@ a:hover {
 }
 
 .button-secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.9);
   border-color: var(--accent-cyan);
   box-shadow: var(--shadow-glow-cyan);
 }
@@ -205,6 +205,138 @@ a:hover {
   animation: float 3s ease-in-out infinite;
 }
 
+/* Icon animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.bounce {
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.pulse-scale {
+  animation: pulse-scale 2s ease-in-out infinite;
+}
+
+/* Simple CSS icons */
+.icon-database {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: var(--accent-cyan);
+  border-radius: 50%;
+  position: relative;
+}
+
+.icon-database::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 12px;
+  height: 12px;
+  background: var(--background-primary);
+  border-radius: 50%;
+}
+
+.icon-query {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: var(--accent-purple);
+  border-radius: 4px;
+  position: relative;
+}
+
+.icon-query::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: var(--background-primary);
+  border-radius: 1px;
+}
+
+.icon-query::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: var(--background-primary);
+  border-radius: 1px;
+}
+
+.icon-index {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: var(--accent-green);
+  border-radius: 4px;
+  position: relative;
+  transform: rotate(45deg);
+}
+
+.icon-index::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 12px;
+  height: 12px;
+  background: var(--background-primary);
+  border-radius: 2px;
+}
+
+.icon-lock {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background: var(--accent-pink);
+  border-radius: 4px;
+  position: relative;
+}
+
+.icon-lock::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  width: 12px;
+  height: 10px;
+  background: var(--background-primary);
+  border-radius: 3px 3px 0 0;
+}
+
+.icon-lock::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  width: 4px;
+  height: 6px;
+  background: var(--background-primary);
+  border-radius: 0 0 2px 2px;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
@@ -215,16 +347,18 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--glass-border);
+  background: var(--accent-cyan);
   border-radius: var(--radius-full);
+  opacity: 0.5;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--foreground-tertiary);
+  background: var(--accent-purple);
+  opacity: 0.7;
 }
 
 /* Selection */
 ::selection {
-  background-color: rgba(0, 243, 255, 0.3);
+  background-color: rgba(123, 211, 234, 0.3);
   color: var(--foreground-primary);
 }
